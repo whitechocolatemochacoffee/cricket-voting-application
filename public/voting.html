@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🏏 Cricket Match Voting App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Include Select2 CSS/JS for searchable dropdowns -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --text-color: #fff;
+      --accent-color: #ffc107;
+      --card-bg: #1f1f1f;
+      --header-bg: linear-gradient(90deg, #ff5722, #ffc107);
+      --button-bg: #ff5722;
+      --button-hover: #e64a19;
+      --modal-bg: #2c2c2c;
+    }
+    .light-theme {
+      --bg-color: #f0f0f0;
+      --text-color: #000;
+      --accent-color: #ff9800;
+      --card-bg: #fff;
+      --header-bg: linear-gradient(90deg, #2196F3, #03A9F4);
+      --button-bg: #2196F3;
+      --button-hover: #1976D2;
+      --modal-bg: #fff;
+    }
+    body {
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      margin: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header-bar h1 {
+      margin: 0;
+      padding: 15px;
+      background: var(--header-bg);
+      border-radius: 12px;
+      text-shadow: 2px 2px 5px #000;
+      color: var(--accent-color);
+    }
+    .header-info {
+      font-size: 0.9em;
+    }
+    .header-info a {
+      color: var(--accent-color);
+      text-decoration: none;
+      margin-left: 10px;
+    }
+    .matches-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 350px;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 8px 18px rgba(255,193,7,0.5);
+    }
+    .card-header {
+      background: var(--button-bg);
+      padding: 12px;
+      color: #fff;
+      font-weight: bold;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .card-icon { margin-right: 8px; font-size: 1.2em; }
+    .card-body {
+      padding: 15px;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      overflow: auto;
+    }
+    .modal-content {
+      background: var(--modal-bg);
+      width: 90%;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 15px;
+      position: relative;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      box-sizing: border-box;
+      color: var(--text-color);
+    }
+    .close {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 25px;
+      cursor: pointer;
+      color: var(--accent-color);
+    }
+    .vote-btn, .declare-btn, .submit-btn, .declare-motm-btn {
+      background: var(--button-bg);
+      color: #fff;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 8px;
+      font-size: 1.2em;
+      width: 100%;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+    }
+    .vote-btn.selected { background: #4CAF50; animation: pulse 0.3s; }
+    .vote-btn:disabled, .submit-btn:disabled { background: #777; cursor: not-allowed; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .dropdown { width: 100% !important; margin-top: 10px; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { color: #000; }
+    .select2-container--default .select2-results__option { color: #000; }
+    .select2-container { width: 100% !important; }
+    @media (max-width: 600px) { .card { width: 100%; } .modal-content { width: 95%; padding: 15px; } }
+  </style>
+</head>
+<body class="dark-theme">
+  <div class="header-bar">
+    <h1><span class="cricket-icon">🏏</span> Cricket Voting App</h1>
+    <div class="header-info">
+      <span id="userEmail"></span>
+      <a href="scoreboard.html">View Scoreboard</a>
+    </div>
+  </div>
+  <div class="matches-container" id="matchesContainer"></div>
+  
+  <div class="modal" id="matchModal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+  
+  <script>
+    // If no logged-in user, redirect to login
+    if (!localStorage.getItem('user')) { window.location.href = 'login.html'; }
+    // Display logged-in user email
+    const user = JSON.parse(localStorage.getItem('user'));
+    document.getElementById('userEmail').innerText = "Logged in as: " + user.email;
+    
+    // Sample match data (in real scenario, may come from a database)
+    const matches = [
+      {
+        title: "India vs Australia",
+        date: "2025-03-15",
+        time: "18:00",
+        teams: {
+          "India": ["Virat Kohli", "Rohit Sharma", "Jasprit Bumrah", "Ravindra Jadeja"],
+          "Australia": ["Steve Smith", "David Warner", "Pat Cummins", "Glenn Maxwell"]
+        }
+      }
+      // Add additional matches as needed.
+    ];
+    
+    let selectedTeam = null;
+    const matchesContainer = document.getElementById('matchesContainer');
+    const modal = document.getElementById('matchModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    // Fetch current results and render match cards
+    function renderMatches() {
+      const today = new Date().toISOString().split('T')[0];
+      const filtered = matches.filter(m => m.date === today);
+      if (!filtered.length) {
+        matchesContainer.innerHTML = `<p>No matches scheduled for today.</p>`;
+        return;
+      }
+      fetch('/results')
+        .then(res => res.json())
+        .then(resultsData => {
+          const resultsMap = {};
+          resultsData.results.forEach(r => { resultsMap[r.matchName] = r; });
+          matchesContainer.innerHTML = filtered.map(match => {
+            let extra = "";
+            if (resultsMap[match.title]) {
+              const r = resultsMap[match.title];
+              extra += `<br><strong>Winner: ${r.winner || "N/A"}</strong>`;
+              if (r.declaredMotm.teamA.length || r.declaredMotm.teamB.length) {
+                const teams = Object.keys(match.teams);
+                extra += `<br><strong>MOTM - ${teams[0]}: ${r.declaredMotm.teamA.join(", ") || "N/A"}</strong>`;
+                extra += `<br><strong>MOTM - ${teams[1]}: ${r.declaredMotm.teamB.join(", ") || "N/A"}</strong>`;
+              }
+            }
+            return `<div class="card" data-title="${match.title}" onclick="openModal('${match.title}')">
+                      <div class="card-header"><span class="card-icon">🏏</span>${match.title}</div>
+                      <div class="card-body">Date: ${match.date} | Time: ${match.time} ${extra}</div>
+                    </div>`;
+          }).join('');
+        });
+    }
+    
+    function openModal(title) {
+      const match = matches.find(m => m.title === title);
+      const teamNames = Object.keys(match.teams);
+      const teamA = teamNames[0];
+      const teamB = teamNames[1];
+      const teamAPlayers = match.teams[teamA];
+      const teamBPlayers = match.teams[teamB];
+      const matchDateTime = new Date(`${match.date}T${match.time}:00`);
+      const freezeTime = matchDateTime.getTime() - 60000;
+      const isVotingClosed = Date.now() >= freezeTime;
+      
+      if (!isVotingClosed) {
+        // Voting UI: two dropdowns per team for MOTM
+        modalContent.innerHTML = `
+          <h2>${title}</h2>
+          <p>Date: ${match.date} | Time: ${match.time}</p>
+          <button class="vote-btn" id="voteTeamA" onclick="castVote('A')">Vote for ${teamA}</button>
+          <button class="vote-btn" id="voteTeamB" onclick="castVote('B')">Vote for ${teamB}</button>
+          <h3>🏆 Man of the Match - ${teamA}</h3>
+          <select class="dropdown teamASelect1">
+            <option value="">Select player for ${teamA} (Option 1)</option>
+            ${teamAPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <select class="dropdown teamASelect2">
+            <option value="">Select player for ${teamA} (Option 2)</option>
+            ${teamAPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <h3>🏆 Man of the Match - ${teamB}</h3>
+          <select class="dropdown teamBSelect1">
+            <option value="">Select player for ${teamB} (Option 1)</option>
+            ${teamBPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <select class="dropdown teamBSelect2">
+            <option value="">Select player for ${teamB} (Option 2)</option>
+            ${teamBPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <button class="submit-btn" id="submitVote" onclick="submitVotes('${title}')">Submit Vote</button>
+        `;
+      } else {
+        // Declaration UI: two dropdowns per team for MOTM
+        modalContent.innerHTML = `
+          <h2>${title} - Voting Closed</h2>
+          <p>Date: ${match.date} | Time: ${match.time}</p>
+          <h3>Declare Winner</h3>
+          <div style="display: flex; justify-content: space-around;">
+            <button class="declare-btn" onclick="declareWinner('${title}', '${teamA}')">${teamA}</button>
+            <button class="declare-btn" onclick="declareWinner('${title}', '${teamB}')">${teamB}</button>
+          </div>
+          <h3>Declare Man of the Match - ${teamA}</h3>
+          <select class="dropdown teamASelect1">
+            <option value="">Select player for ${teamA} (Option 1)</option>
+            ${teamAPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <select class="dropdown teamASelect2">
+            <option value="">Select player for ${teamA} (Option 2)</option>
+            ${teamAPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <h3>Declare Man of the Match - ${teamB}</h3>
+          <select class="dropdown teamBSelect1">
+            <option value="">Select player for ${teamB} (Option 1)</option>
+            ${teamBPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <select class="dropdown teamBSelect2">
+            <option value="">Select player for ${teamB} (Option 2)</option>
+            ${teamBPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+          <button class="declare-motm-btn" onclick="declareMotm('${title}')">Declare MOTM</button>
+          <button class="declare-btn" onclick="finalizeMatch('${title}')">Finalize Match</button>
+        `;
+      }
+      setTimeout(() => {
+        $('.dropdown').select2({ placeholder: "Search and select", width: 'resolve' });
+      }, 100);
+      selectedTeam = null;
+      modal.style.display = "block";
+    }
+    
+    function castVote(team) {
+      document.getElementById('voteTeamA').classList.remove('selected');
+      document.getElementById('voteTeamB').classList.remove('selected');
+      if (team === 'A') { document.getElementById('voteTeamA').classList.add('selected'); }
+      else { document.getElementById('voteTeamB').classList.add('selected'); }
+      selectedTeam = team;
+      document.getElementById('submitVote').disabled = false;
+    }
+    
+    function submitVotes(title) {
+      const match = matches.find(m => m.title === title);
+      const matchDateTime = new Date(`${match.date}T${match.time}:00`);
+      const freezeTime = matchDateTime.getTime() - 60000;
+      if (Date.now() >= freezeTime) {
+        alert("Voting is closed.");
+        closeModal();
+        return;
+      }
+      if (!selectedTeam) { alert("Please cast your vote."); return; }
+      const teamA_sel1 = $('.teamASelect1').val();
+      const teamA_sel2 = $('.teamASelect2').val();
+      const teamB_sel1 = $('.teamBSelect1').val();
+      const teamB_sel2 = $('.teamBSelect2').val();
+      const voteDetails = {
+        matchDate: match.date,
+        matchName: match.title,
+        votedTeam: selectedTeam === 'A' ? Object.keys(match.teams)[0] : Object.keys(match.teams)[1],
+        motm: {
+          teamA: [teamA_sel1 || "", teamA_sel2 || ""],
+          teamB: [teamB_sel1 || "", teamB_sel2 || ""]
+        }
+      };
+      if (confirm("Submit your vote?")) {
+        fetch('/vote', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ email: user.email, voteDetails })
+        }).then(res => res.json())
+          .then(result => { alert(result.message); closeModal(); });
+      }
+    }
+    
+    function declareWinner(title, winnerTeam) {
+      fetch('/declare-winner', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ matchName: title, winner: winnerTeam })
+      }).then(res => res.json())
+        .then(result => { alert(result.message); renderMatches(); closeModal(); });
+    }
+    
+    function declareMotm(title) {
+      const teamA_sel1 = $('.teamASelect1').val();
+      const teamA_sel2 = $('.teamASelect2').val();
+      const teamB_sel1 = $('.teamBSelect1').val();
+      const teamB_sel2 = $('.teamBSelect2').val();
+      if ((!teamA_sel1 && !teamA_sel2) || (!teamB_sel1 && !teamB_sel2)) {
+        alert("Please select at least one MOTM for each team.");
+        return;
+      }
+      fetch('/declare-motm', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ matchName: title, declaredMotm: { teamA: [teamA_sel1 || "", teamA_sel2 || ""], teamB: [teamB_sel1 || "", teamB_sel2 || ""] } })
+      }).then(res => res.json())
+        .then(result => { alert(result.message); renderMatches(); closeModal(); });
+    }
+    
+    function finalizeMatch(title) {
+      fetch('/finalize-match', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ matchName: title })
+      }).then(res => res.json())
+        .then(result => { alert(result.message); renderMatches(); closeModal(); });
+    }
+    
+    function closeModal() { modal.style.display = "none"; }
+    function toggleTheme() {
+      const body = document.body;
+      if (body.classList.contains('light-theme')) {
+        body.classList.remove('light-theme');
+        body.classList.add('dark-theme');
+        document.getElementById('themeIcon').innerText = "🌙";
+      } else {
+        body.classList.remove('dark-theme');
+        body.classList.add('light-theme');
+        document.getElementById('themeIcon').innerText = "☀️";
+      }
+    }
+    
+    renderMatches();
+  </script>
+</body>
+</html>

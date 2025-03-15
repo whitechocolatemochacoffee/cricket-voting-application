@@ -1,0 +1,54 @@
+{
+    "votersPool": [
+      {
+        "email": "jeetandra@gmail.com",
+        "password": "password123",
+        "startingContribution": 1000,
+        "perMatchContri": 100,
+        "perMotmContri": 50,
+        "currentStanding": 1000,
+        "name": "Player One",
+        "votingInfo": [
+          {
+            "matchDate": "2025-03-10",
+            "matchName": "India vs Australia",
+            "votedTeam": "India",
+            "motm": {
+              "teamA": ["Virat Kohli", ""],
+              "teamB": ["", "Pat Cummins"]
+            }
+          },
+          {
+            "matchDate": "2025-03-12",
+            "matchName": "England vs Pakistan",
+            "votedTeam": "Pakistan",
+            "motm": {
+              "teamA": ["Babar Azam", ""],
+              "teamB": ["Jos Buttler", ""]
+            }
+          }
+        ]
+      },
+      {
+        "email": "jagrit@example.com",
+        "password": "admin123",
+        "startingContribution": 1000,
+        "perMatchContri": 100,
+        "perMotmContri": 50,
+        "currentStanding": 1000,
+        "name": "Player Two",
+        "votingInfo": [
+          {
+            "matchDate": "2025-03-15",
+            "matchName": "South Africa vs New Zealand",
+            "votedTeam": "New Zealand",
+            "motm": {
+              "teamA": ["Kane Williamson", ""],
+              "teamB": ["Quinton de Kock", ""]
+            }
+          }
+        ]
+      }
+    ]
+  }
+  

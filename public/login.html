@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Cricket Voting App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #121212; color: #fff; font-family: Arial, sans-serif; margin:0; }
+    .login-container { background: #1f1f1f; padding: 20px; border-radius: 8px; width: 300px; }
+    input { width: 100%; padding: 10px; margin: 5px 0; }
+    button { width: 100%; padding: 10px; background: #ff5722; border: none; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+      const result = await response.json();
+      if (result.success) {
+        localStorage.setItem('user', JSON.stringify(result.user));
+        window.location.href = 'voting.html';
+      } else {
+        alert('Invalid email or password!');
+      }
+    });
+  </script>
+</body>
+</html>
